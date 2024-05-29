@@ -1,6 +1,0 @@
-POST http://localhost:8080/setBoard HTTP/1.1
-Content-Type: application/json
-
-{
- "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
-}
