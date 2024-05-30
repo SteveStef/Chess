@@ -1,14 +1,21 @@
 package utils 
 
-import "fmt"
+import (
+  "fmt"
+)
 
 type BitboardConstants struct {
-  NotAFile uint64
-  NotBFile uint64
-  NotGFile uint64
-  NotHFile uint64
-  NotABFile uint64
-  NotGHFile uint64
+  A_File uint64
+  B_File uint64
+  G_File uint64
+  H_File uint64
+  AB_File uint64
+  GH_File uint64
+
+  RANK_1 uint64
+  RANK_8 uint64
+
+  OnBoard uint64
 }
 
 type Bitboard struct {
@@ -77,6 +84,9 @@ func InitBoard(bitboard *Bitboard) {
   bitboard.whiteTurn = true;
 }
 
+func GenerateBoardFromFen(fen string, bitboard *Bitboard) {
+
+}
 
 func DisplayPieceLocation(piece uint64) {
   for i := 0; i < 8; i++ {
@@ -104,143 +114,6 @@ func GetValidMoves(typeOfPiece string, piece uint64, bitboard *Bitboard, Constan
     return GetRookMoves(piece, bitboard, Constants, typeOfPiece == "wr")
   }
   return []uint64{}
-}
-
-func GetKnightMoves(knightPosition uint64, bitboard *Bitboard, Constants *BitboardConstants, isWhite bool) []uint64 {
-  var moves []uint64
-  var allPieces uint64
-
-  if isWhite {
-    allPieces = bitboard.whitePawns | bitboard.whiteKnights | bitboard.whiteBishops | bitboard.whiteRooks | bitboard.whiteQueens | bitboard.whiteKing
-  } else {
-    allPieces = bitboard.blackPawns | bitboard.blackKnights | bitboard.blackBishops | bitboard.blackRooks | bitboard.blackQueens | bitboard.blackKing
-  }
-
-  shiftAmounts := []uint64{ 15, 17, 10, 6 }
-
-  // Helper function for shifting and appending moves
-  appendIfValid := func(shiftOperation func(uint64) uint64, shiftAmount uint64, fileMask uint64) {
-    shiftedPosition := shiftOperation(knightPosition)
-    if (shiftedPosition & allPieces) == 0 && (shiftedPosition & fileMask) == 0 && shiftedPosition != 0 {
-      moves = append(moves, shiftedPosition)
-    }
-  }
-
-  // down shifting
-  for _, shiftAmount := range shiftAmounts {
-    switch shiftAmount {
-    case 17:
-      appendIfValid(func(pos uint64) uint64 { return pos << shiftAmount }, shiftAmount, Constants.NotAFile)
-    case 10:
-      appendIfValid(func(pos uint64) uint64 { return pos << shiftAmount }, shiftAmount, Constants.NotABFile)
-    case 15:
-      appendIfValid(func(pos uint64) uint64 { return pos << shiftAmount }, shiftAmount, Constants.NotHFile)
-    case 6:
-      appendIfValid(func(pos uint64) uint64 { return pos << shiftAmount }, shiftAmount, Constants.NotGHFile)
-  }
-  }
-
-  // upshifting
-  for _, shiftAmount := range shiftAmounts {
-    switch shiftAmount {
-    case 17:
-      appendIfValid(func(pos uint64) uint64 { return pos >> shiftAmount }, shiftAmount, Constants.NotHFile)
-    case 10:
-      appendIfValid(func(pos uint64) uint64 { return pos >> shiftAmount }, shiftAmount, Constants.NotGHFile)
-    case 15:
-      appendIfValid(func(pos uint64) uint64 { return pos >> shiftAmount }, shiftAmount, Constants.NotAFile)
-    case 6:
-      appendIfValid(func(pos uint64) uint64 { return pos >> shiftAmount }, shiftAmount, Constants.NotABFile)
-  }
-  }
-
-  return moves
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-func GetPawnMoves(pawnPosition uint64, bitboard *Bitboard, Constants *BitboardConstants, onBottom bool, isWhite bool) []uint64 {
-  var moves []uint64
-  var allPieces uint64
-  shiftAmount := uint64(8)
-
-  whitePieces := bitboard.whitePawns | bitboard.whiteKnights | bitboard.whiteBishops | bitboard.whiteRooks | bitboard.whiteQueens | bitboard.whiteKing
-  blackPieces := bitboard.blackPawns | bitboard.blackKnights | bitboard.blackBishops | bitboard.blackRooks | bitboard.blackQueens | bitboard.blackKing
-  allPieces = whitePieces | blackPieces
-  DisplayPieceLocation(whitePieces)
-
-  if onBottom && ((pawnPosition >> shiftAmount) & allPieces) == 0 {
-    moves = append(moves, pawnPosition >> shiftAmount)
-
-  } else if !onBottom && ((pawnPosition << shiftAmount) & allPieces) == 0 {
-    moves = append(moves, pawnPosition << shiftAmount)
-  }
-
-  // double move if pawn hasn't moved
-  if onBottom && !pawnHasMoved(pawnPosition, onBottom) && len(moves) > 0 {
-    moves = append(moves, pawnPosition >> 16)
-  } else if !onBottom && !pawnHasMoved(pawnPosition, onBottom) && len(moves) > 0 {
-    moves = append(moves, pawnPosition << 16)
-  }
-
-  return moves
-}
-
-func pawnHasMoved(pawnPosition uint64, onBottom bool) bool {
-  var initialPawnPosition uint64
-  if onBottom {
-    initialPawnPosition = uint64(0xFF) << 48
-  } else {
-    initialPawnPosition = uint64(0xFF) << 8
-  }
-  result := initialPawnPosition & pawnPosition
-  return result == 0
-}
-
-
-
-
-
-
-
-
-
-func GetRookMoves(rookPosition uint64, bitboard *Bitboard, Constants *BitboardConstants, isWhite bool) []uint64 {
-  var moves []uint64
-  //var allPieces uint64
-  blackPieces := bitboard.blackPawns | bitboard.blackKnights | bitboard.blackBishops | bitboard.blackRooks | bitboard.blackQueens | bitboard.blackKing
-  whitePieces := bitboard.whitePawns | bitboard.whiteKnights | bitboard.whiteBishops | bitboard.whiteRooks | bitboard.whiteQueens | bitboard.whiteKing
-  //allPieces = blackPieces | whitePieces
-
-  // go up
-  for i := 1; i < 8; i++ {
-    shiftedPosition := rookPosition >> (8 * i)
-    // find a way to check if the position is on the board
-    if isWhite && ((shiftedPosition & blackPieces) != 0 || (shiftedPosition == 0)) {
-      moves = append(moves, shiftedPosition)
-      if shiftedPosition & blackPieces != 0 {
-        break
-      }
-    } else if !isWhite && ((shiftedPosition & whitePieces) != 0 || (shiftedPosition == 0)) {
-      moves = append(moves, shiftedPosition)
-      if shiftedPosition & whitePieces != 0 {
-        break
-      }
-    }
-  }
-
-  return moves
 }
 
 

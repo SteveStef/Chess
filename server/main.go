@@ -23,31 +23,6 @@ type MoveRes struct {
 var bitboard Bitboard 
 var Constants BitboardConstants 
 
-func Moves(context *gin.Context) {
-  var move MoveReq
-
-  if err := context.BindJSON(&move); err != nil {
-    fmt.Println("Invalid request body")
-    fmt.Println(err)
-    return
-  }
-
-  intPos := positionFromRowCol(move.Rank, move.File)
-
-  fmt.Println("Piece:", move.Piece)
-  //DisplayPieceLocation(intPos)
-
-  validMoves := GetValidMoves(move.Piece, intPos, &bitboard, &Constants)
-
-  moveList := make([]MoveRes, len(validMoves))
-  for i, pos := range validMoves {
-    row, col := rowColFromPosition(pos)
-    moveList[i] = MoveRes{Rank: row, File: col} 
-  }
-
-  context.IndentedJSON(http.StatusOK, moveList) 
-}
-
 func positionFromRowCol(row, col uint8) uint64 {
   p := uint64(1) << 63 
   p = p >> (8 * row)
@@ -67,15 +42,52 @@ func rowColFromPosition(pos uint64) (row, col uint8) {
   return 0, 0
 }
 
+func Moves(context *gin.Context) {
+  var move MoveReq
+
+  if err := context.BindJSON(&move); err != nil {
+    fmt.Println("Invalid request body")
+    fmt.Println(err)
+    return
+  }
+
+  intPos := positionFromRowCol(move.Rank, move.File)
+  validMoves := GetValidMoves(move.Piece, intPos, &bitboard, &Constants)
+
+  moveList := make([]MoveRes, len(validMoves))
+  for i, pos := range validMoves {
+    row, col := rowColFromPosition(pos)
+    moveList[i] = MoveRes{Rank: row, File: col} 
+  }
+
+  context.IndentedJSON(http.StatusOK, moveList) 
+}
+
+
+func GenerateBoard(context *gin.Context) {
+  var fen string
+  if err := context.BindJSON(&fen); err != nil {
+    fmt.Println("Invalid request body")
+    fmt.Println(err)
+    return
+  }
+  GenerateBoardFromFen(fen, &bitboard)
+  context.IndentedJSON(http.StatusOK, "Board generated")
+}
 
 func main() {
   Constants = BitboardConstants {
-    NotAFile: 0x0101010101010101,
-    NotBFile: 0x0202020202020202,
-    NotGFile: 0x4040404040404040,
-    NotHFile: 0x8080808080808080,
-    NotABFile: 0x0303030303030303,
-    NotGHFile: 0xC0C0C0C0C0C0C0C0,
+    A_File: 0x0101010101010101,
+    B_File: 0x0202020202020202,
+    G_File: 0x4040404040404040,
+    H_File: 0x8080808080808080,
+    AB_File: 0x0303030303030303,
+    GH_File: 0xC0C0C0C0C0C0C0C0,
+
+    RANK_1: 0xFF00000000000000,
+    RANK_8: 0x00000000000000FF,
+
+    OnBoard: 0xFFFFFFFFFFFFFFFF,
   }
 
   InitBoard(&bitboard)
@@ -83,6 +95,7 @@ func main() {
 
   router := gin.Default()
   router.POST("/moves", Moves)
+  router.POST("initboard", GenerateBoard)
   handler := cors.Default().Handler(router)
 
   http.ListenAndServe("localhost:8080", handler)
