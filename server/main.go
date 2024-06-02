@@ -75,6 +75,31 @@ func GenerateBoard(context *gin.Context) {
   context.IndentedJSON(http.StatusOK, "Board generated")
 }
 
+func MovePiece(context *gin.Context) {
+  var move  struct {
+    Piece string `json:"Piece"`
+    File uint8 `json:"File"`
+    Rank uint8 `json:"Rank"`
+    NewFile uint8 `json:"NewFile"`
+    NewRank uint8 `json:"NewRank"`
+  }
+
+  if err := context.BindJSON(&move); err != nil {
+    fmt.Println("Invalid request body")
+    fmt.Println(err)
+    context.IndentedJSON(http.StatusBadRequest, "Invalid request body")
+    return
+  }
+  
+  intPos := positionFromRowCol(move.Rank, move.File)
+  newPos := positionFromRowCol(move.NewRank, move.NewFile)
+  MakeMove(move.Piece, intPos, newPos, &bitboard)
+  PrintBoard(&bitboard)
+
+  fmt.Println(move)
+  context.IndentedJSON(http.StatusOK, "Piece moved")
+}
+
 func main() {
   Constants = BitboardConstants {
     A_File: 0x0101010101010101,
@@ -95,7 +120,8 @@ func main() {
 
   router := gin.Default()
   router.POST("/moves", Moves)
-  router.POST("initboard", GenerateBoard)
+  router.POST("/place", MovePiece)
+  //router.POST("initboard", GenerateBoard)
   handler := cors.Default().Handler(router)
 
   http.ListenAndServe("localhost:8080", handler)

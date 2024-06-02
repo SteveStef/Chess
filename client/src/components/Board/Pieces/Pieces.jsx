@@ -2,6 +2,7 @@ import "./Pieces.css";
 import Piece from "./Piece";
 import { createPosition, copyPosition } from "../../../helper";
 import { useState, useRef } from "react";
+
 const Pieces = ({ updateHighlight, nothigh }) => {
   const [state, setState] = useState(createPosition());
   const ref = useRef();
@@ -14,7 +15,25 @@ const Pieces = ({ updateHighlight, nothigh }) => {
     return { x, y };
   };
 
-  const drop = (e) => {
+  const placePiece = async (piece, oldRank, oldFile, newRank, newFile) => {
+    try {
+      const requestOptions = {
+        method: "POST",
+        body: JSON.stringify({ Piece: piece, Rank: parseInt(oldRank), File: parseInt(oldFile), NewRank: parseInt(newRank), NewFile: parseInt(newFile) }),
+        headers: { "Content-Type": "application/json" },
+      };
+      const response = await fetch(
+        "http://localhost:8080/place",
+        requestOptions,
+      );
+      const data = await response.json();
+      console.log(data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const drop = async (e) => {
     const newPosition = copyPosition(state);
     const { x, y } = calculateCoords(e);
     const [p, rank, file] = e.dataTransfer.getData("text").split(",");
@@ -23,6 +42,7 @@ const Pieces = ({ updateHighlight, nothigh }) => {
     newPosition[rank][file] = "";
     newPosition[x][y] = p;
     setState(newPosition);
+    await placePiece(p, rank, file, x, y);
   };
 
   const onDragOver = (e) => {

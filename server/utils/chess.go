@@ -88,6 +88,36 @@ func GenerateBoardFromFen(fen string, bitboard *Bitboard) {
 
 }
 
+
+var PieceMoveFuncs = map[string]func(*Bitboard, uint64, uint64){
+	"wp": func(b *Bitboard, from, to uint64) { b.whitePawns ^= from; b.whitePawns |= to },
+	"bp": func(b *Bitboard, from, to uint64) { b.blackPawns ^= from; b.blackPawns |= to },
+
+	"wn": func(b *Bitboard, from, to uint64) { b.whiteKnights ^= from; b.whiteKnights |= to },
+	"bn": func(b *Bitboard, from, to uint64) { b.blackKnights ^= from; b.blackKnights |= to },
+
+  "wb": func(b *Bitboard, from, to uint64) { b.whiteBishops ^= from; b.whiteBishops |= to },
+  "bb": func(b *Bitboard, from, to uint64) { b.blackBishops ^= from; b.blackBishops |= to },
+
+	"wr": func(b *Bitboard, from, to uint64) { b.whiteRooks ^= from; b.whiteRooks |= to },
+	"br": func(b *Bitboard, from, to uint64) { b.blackRooks ^= from; b.blackRooks |= to },
+
+	"wq": func(b *Bitboard, from, to uint64) { b.whiteQueens ^= from; b.whiteQueens |= to },
+	"bq": func(b *Bitboard, from, to uint64) { b.blackQueens ^= from; b.blackQueens |= to },
+
+	"wk": func(b *Bitboard, from, to uint64) { b.whiteKing ^= from; b.whiteKing |= to },
+	"bk": func(b *Bitboard, from, to uint64) { b.blackKing ^= from; b.blackKing |= to },
+}
+
+func MakeMove(piece string, from uint64, to uint64, bitboard *Bitboard) {
+	if moveFunc, ok := PieceMoveFuncs[piece]; ok {
+		moveFunc(bitboard, from, to)
+	} else {
+		fmt.Printf("Unknown piece: %s\n", piece)
+	}
+}
+
+
 func DisplayPieceLocation(piece uint64) {
   for i := 0; i < 8; i++ {
     for j := 0; j < 8; j++ {
@@ -112,7 +142,14 @@ func GetValidMoves(typeOfPiece string, piece uint64, bitboard *Bitboard, Constan
     return GetPawnMoves(piece, bitboard, Constants, typeOfPiece == "wp", typeOfPiece == "wp")
   } else if typeOfPiece == "wr" || typeOfPiece == "br" {
     return GetRookMoves(piece, bitboard, Constants, typeOfPiece == "wr")
+  } else if typeOfPiece == "wb" || typeOfPiece == "bb" {
+    return GetBishopMoves(piece, bitboard, Constants, typeOfPiece == "wb")
+  } else if typeOfPiece == "wq" || typeOfPiece == "bq" {
+    return GetQueenMoves(piece, bitboard, Constants, typeOfPiece == "wq")
+  } else if typeOfPiece == "wk" || typeOfPiece == "bk" {
+    return GetKingMoves(piece, bitboard, Constants, typeOfPiece == "wk")
   }
+
   return []uint64{}
 }
 

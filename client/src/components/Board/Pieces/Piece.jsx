@@ -1,4 +1,5 @@
 const Piece = ({ updateHighlight, rank, file, piece }) => {
+
   const getValidMoves = async () => {
     try {
       const requestOptions = {
@@ -20,6 +21,7 @@ const Piece = ({ updateHighlight, rank, file, piece }) => {
       console.log(err);
     }
   };
+
   const start = (e) => {
     getValidMoves();
     e.dataTransfer.setData("text/plain", `${piece},${rank},${file}`);
@@ -28,7 +30,9 @@ const Piece = ({ updateHighlight, rank, file, piece }) => {
       e.target.style.display = "none";
     }, 0);
   };
+
   const end = (e) => (e.target.style.display = "block");
+
   return (
     <div
       draggable={true}
