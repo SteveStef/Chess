@@ -116,11 +116,15 @@ func main() {
   PrintBoard(&bitboard)
 
   router := gin.Default()
+
   router.POST("/moves", Moves)
   router.POST("/place", MovePiece)
   //router.POST("initboard", GenerateBoard)
+
   handler := cors.Default().Handler(router)
 
   http.ListenAndServe("localhost:8080", handler)
 }
+
+
 

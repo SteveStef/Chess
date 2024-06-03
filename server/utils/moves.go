@@ -233,9 +233,9 @@ func GetKingMoves(kingPosition uint64, bitboard *Bitboard, Constants *BitboardCo
   }
 
   possibleMoves := []uint64{
-    kingPosition << 8, kingPosition >> 8, 
-    kingPosition << 1, kingPosition >> 1, 
-    kingPosition << 7, kingPosition << 9, 
+    kingPosition << 8, kingPosition >> 8,
+    kingPosition << 1, kingPosition >> 1,
+    kingPosition << 7, kingPosition << 9,
     kingPosition >> 7, kingPosition >> 9,
   }
 
@@ -245,8 +245,15 @@ func GetKingMoves(kingPosition uint64, bitboard *Bitboard, Constants *BitboardCo
     }
   }
 
+  // castling
+  // if the king hasn't moved and the rooks haven't moved and there are no pieces between the king and rook
+  if isWhite {
+
+  } else {
+
+  }
+
+
   return moves
 }
-
-
 

@@ -1,8 +1,6 @@
 package utils 
 
-import (
-  "fmt"
-)
+import "fmt"
 
 type BitboardConstants struct {
   A_File uint64
@@ -62,7 +60,7 @@ func PrintBoard(bitboard *Bitboard) {
             break
           }
         }
-    }
+      }
     }
     fmt.Println()
   }
@@ -83,6 +81,7 @@ func InitBoard(bitboard *Bitboard) {
   bitboard.whiteKing = uint64(0x10) << 56
   bitboard.blackKing = uint64(0x10)
   bitboard.enPassant = 0
+  bitboard.castlingRights = 0
   bitboard.whiteTurn = true;
 }
 
@@ -90,7 +89,7 @@ func GenerateBoardFromFen(fen string, bitboard *Bitboard) {
 
 }
 
-var PieceMoveFuncs = map[string]func(*Bitboard, uint64, uint64){
+var PieceMoveFuncs = map[string]func(*Bitboard, uint64, uint64) {
 	"wp": func(b *Bitboard, from, to uint64) { b.whitePawns ^= from; b.whitePawns |= to },
 	"bp": func(b *Bitboard, from, to uint64) { b.blackPawns ^= from; b.blackPawns |= to },
 
@@ -120,10 +119,11 @@ func MakeMove(piece string, from uint64, to uint64, bitboard *Bitboard) {
       bitboard.enPassant = from << 8
     } 
 
-    fmt.Println("En passant square:")
-    DisplayPieceLocation(bitboard.enPassant)
+    //fmt.Println("En passant square:")
+    //DisplayPieceLocation(bitboard.enPassant)
 
 		moveFunc(bitboard, from, to)
+    bitboard.whiteTurn = !bitboard.whiteTurn
 	} else {
 		fmt.Printf("Unknown piece: %s\n", piece)
 	}
@@ -139,7 +139,7 @@ func DisplayPieceLocation(piece uint64) {
         fmt.Print(" . ")
       case 1:
         fmt.Print(" X ")
-    }
+      }
     }
     fmt.Println()
   }
