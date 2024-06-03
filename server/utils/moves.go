@@ -83,15 +83,22 @@ func GetPawnMoves(pawnPosition uint64, bitboard *Bitboard, Constants *BitboardCo
     moves = append(moves, pawnPosition << 16)
   }
 
-  // capture moves (havent been tested)
-  if onBottom && (pawnPosition >> 7) & oppositeColorPieces != 0 { 
-    moves = append(moves, pawnPosition >> 7)
-  } else if onBottom && (pawnPosition >> 9) & oppositeColorPieces != 0 {
-    moves = append(moves, pawnPosition >> 9)
-  } else if !onBottom && (pawnPosition << 7) & oppositeColorPieces != 0 {
-    moves = append(moves, pawnPosition << 7)
-  } else if !onBottom && (pawnPosition << 9) & oppositeColorPieces != 0 {
-    moves = append(moves, pawnPosition << 9)
+  // capture moves
+  tmpMove := pawnPosition >> 7
+  if onBottom && (tmpMove & oppositeColorPieces != 0 || tmpMove & bitboard.enPassant != 0) {
+    moves = append(moves, tmpMove)
+  }
+  tmpMove = pawnPosition >> 9
+  if onBottom && (tmpMove & oppositeColorPieces != 0 || tmpMove & bitboard.enPassant != 0) {
+    moves = append(moves, tmpMove)
+  }
+  tmpMove = pawnPosition << 7
+  if !onBottom && (tmpMove & oppositeColorPieces != 0 || tmpMove & bitboard.enPassant != 0) {
+    moves = append(moves, tmpMove)
+  }
+  tmpMove = pawnPosition << 9
+  if !onBottom && (tmpMove & oppositeColorPieces != 0 || tmpMove & bitboard.enPassant != 0) {
+    moves = append(moves, tmpMove)
   }
 
   return moves
@@ -206,10 +213,13 @@ func GetBishopMoves(bishopPosition uint64, bitboard *Bitboard, Constants *Bitboa
 
   return moves
 }
+
 func GetQueenMoves(queenPosition uint64, bitboard *Bitboard, Constants *BitboardConstants, isWhite bool) []uint64 {
-  moves := GetRookMoves(queenPosition, bitboard, Constants, isWhite)
-  moves = append(moves, GetBishopMoves(queenPosition, bitboard, Constants, isWhite)...)
-  return moves
+  crossMoves := GetRookMoves(queenPosition, bitboard, Constants, isWhite)
+  diagonalMoves := GetBishopMoves(queenPosition, bitboard, Constants, isWhite)
+
+  allMoves := append(crossMoves, diagonalMoves...)
+  return allMoves
 }
 
 func GetKingMoves(kingPosition uint64, bitboard *Bitboard, Constants *BitboardConstants, isWhite bool) []uint64 {
@@ -222,34 +232,20 @@ func GetKingMoves(kingPosition uint64, bitboard *Bitboard, Constants *BitboardCo
     sameColorPieces = bitboard.blackPawns | bitboard.blackKnights | bitboard.blackBishops | bitboard.blackRooks | bitboard.blackQueens | bitboard.blackKing
   }
 
-  shiftAmounts := []uint64{ 7, 8, 9, 1, 1 << 7, 1 << 9, 1 << 8, 1 << 1 }
-  for _, shiftAmount := range shiftAmounts {
-    var shifted uint64
-    switch shiftAmount {
-    case 7:
-      shifted = kingPosition >> 7
-    case 8:
-      shifted = kingPosition >> 8
-    case 9:
-      shifted = kingPosition >> 9
-    case 1:
-      shifted = kingPosition >> 1
-    case 1 << 7:
-      shifted = kingPosition << 7
-    case 1 << 8:
-      shifted = kingPosition << 8
-    case 1 << 9:
-      shifted = kingPosition << 9
-    case 1 << 1:
-      shifted = kingPosition << 1
-    }
+  possibleMoves := []uint64{
+    kingPosition << 8, kingPosition >> 8, 
+    kingPosition << 1, kingPosition >> 1, 
+    kingPosition << 7, kingPosition << 9, 
+    kingPosition >> 7, kingPosition >> 9,
+  }
 
-    if (shifted & sameColorPieces) == 0 {
-      moves = append(moves, shifted)
+  for _, move := range possibleMoves {
+    if (move & Constants.OnBoard) != 0 && (move & sameColorPieces) == 0 {
+      moves = append(moves, move)
     }
   }
 
-  return []uint64{}
+  return moves
 }
 
 

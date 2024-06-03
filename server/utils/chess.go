@@ -21,8 +21,9 @@ type BitboardConstants struct {
 type Bitboard struct {
   whitePawns, whiteKnights, whiteBishops, whiteRooks, whiteQueens, whiteKing uint64
   blackPawns, blackKnights, blackBishops, blackRooks, blackQueens, blackKing uint64
-  whiteTurn bool
+  enPassant uint64
   castlingRights uint64
+  whiteTurn bool
 }
 
 
@@ -81,13 +82,13 @@ func InitBoard(bitboard *Bitboard) {
   bitboard.blackQueens = uint64(0x08)
   bitboard.whiteKing = uint64(0x10) << 56
   bitboard.blackKing = uint64(0x10)
+  bitboard.enPassant = 0
   bitboard.whiteTurn = true;
 }
 
 func GenerateBoardFromFen(fen string, bitboard *Bitboard) {
 
 }
-
 
 var PieceMoveFuncs = map[string]func(*Bitboard, uint64, uint64){
 	"wp": func(b *Bitboard, from, to uint64) { b.whitePawns ^= from; b.whitePawns |= to },
@@ -111,6 +112,17 @@ var PieceMoveFuncs = map[string]func(*Bitboard, uint64, uint64){
 
 func MakeMove(piece string, from uint64, to uint64, bitboard *Bitboard) {
 	if moveFunc, ok := PieceMoveFuncs[piece]; ok {
+    bitboard.enPassant = 0
+    // if the piece is a pawn and it is moving two squares forward then set the enPassant square to the square behind the pawn
+    if piece == "wp" && (from >> 16) == to {
+      bitboard.enPassant = from >> 8
+    } else if piece == "bp" && (from << 16) == to {
+      bitboard.enPassant = from << 8
+    } 
+
+    fmt.Println("En passant square:")
+    DisplayPieceLocation(bitboard.enPassant)
+
 		moveFunc(bitboard, from, to)
 	} else {
 		fmt.Printf("Unknown piece: %s\n", piece)

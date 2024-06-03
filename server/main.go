@@ -8,13 +8,6 @@ import (
   . "server/utils"
 )
 
-
-type MoveReq struct {
-  Piece string `json:"Piece"`
-  File uint8 `json:"File"` 
-  Rank uint8`json:"Rank"`
-}
-
 type MoveRes struct {
   File uint8 `json:"File"` 
   Rank uint8`json:"Rank"`
@@ -43,7 +36,11 @@ func rowColFromPosition(pos uint64) (row, col uint8) {
 }
 
 func Moves(context *gin.Context) {
-  var move MoveReq
+  var move struct {
+    Piece string `json:"Piece"`
+    File uint8 `json:"File"` 
+    Rank uint8`json:"Rank"`
+  }
 
   if err := context.BindJSON(&move); err != nil {
     fmt.Println("Invalid request body")
