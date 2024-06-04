@@ -222,15 +222,18 @@ func GetQueenMoves(queenPosition uint64, bitboard *Bitboard, Constants *Bitboard
   return allMoves
 }
 
-func GetKingMoves(kingPosition uint64, bitboard *Bitboard, Constants *BitboardConstants, isWhite bool) []uint64 {
+func GetKingMoves(kingPosition uint64, bitboard *Bitboard, Constants *BitboardConstants, isWhite bool, onBottom bool) []uint64 {
   var moves []uint64
   var sameColorPieces uint64
+  var allPieces uint64
 
   if isWhite {
     sameColorPieces = bitboard.whitePawns | bitboard.whiteKnights | bitboard.whiteBishops | bitboard.whiteRooks | bitboard.whiteQueens | bitboard.whiteKing
   } else {
     sameColorPieces = bitboard.blackPawns | bitboard.blackKnights | bitboard.blackBishops | bitboard.blackRooks | bitboard.blackQueens | bitboard.blackKing
   }
+
+  allPieces = bitboard.whitePawns | bitboard.whiteKnights | bitboard.whiteBishops | bitboard.whiteRooks | bitboard.whiteQueens | bitboard.whiteKing | bitboard.blackPawns | bitboard.blackKnights | bitboard.blackBishops | bitboard.blackRooks | bitboard.blackQueens | bitboard.blackKing
 
   possibleMoves := []uint64{
     kingPosition << 8, kingPosition >> 8,
@@ -245,14 +248,34 @@ func GetKingMoves(kingPosition uint64, bitboard *Bitboard, Constants *BitboardCo
     }
   }
 
-  // castling
-  // if the king hasn't moved and the rooks haven't moved and there are no pieces between the king and rook
-  if isWhite {
+  if isWhite && (bitboard.castlingRights & 0x1 == 1) { // white king side
+    if onBottom {
+      if (kingPosition << 1) & allPieces == 0 && (kingPosition << 2) & allPieces == 0 { moves = append(moves, kingPosition << 2) }
+    } else {
+      if (kingPosition >> 1) & allPieces == 0 && (kingPosition >> 2) & allPieces == 0 { moves = append(moves, kingPosition >> 2) }
+    }
 
-  } else {
+  } else if isWhite && (bitboard.castlingRights & 0x2 == 1) { // white queen side 
+    if onBottom {
+      if (kingPosition << 1) & allPieces == 0 && (kingPosition << 2) & allPieces == 0 { moves = append(moves, kingPosition << 2) }
+    } else {
+      if (kingPosition >> 1) & allPieces == 0 && (kingPosition >> 2) & allPieces == 0 { moves = append(moves, kingPosition >> 2) }
+    }
 
+  } else if !isWhite && (bitboard.castlingRights & 0x4 == 1) { // black king side
+    if onBottom {
+      if (kingPosition << 1) & allPieces == 0 && (kingPosition << 2) & allPieces == 0 { moves = append(moves, kingPosition << 2) }
+    } else {
+      if (kingPosition >> 1) & allPieces == 0 && (kingPosition >> 2) & allPieces == 0 { moves = append(moves, kingPosition >> 2) }
+    }
+
+  } else if !isWhite && (bitboard.castlingRights & 0x8 == 1) { // black queen side
+    if onBottom {
+      if (kingPosition << 1) & allPieces == 0 && (kingPosition << 2) & allPieces == 0 { moves = append(moves, kingPosition << 2) }
+    } else {
+      if (kingPosition >> 1) & allPieces == 0 && (kingPosition >> 2) & allPieces == 0 { moves = append(moves, kingPosition >> 2) }
+    }
   }
-
 
   return moves
 }

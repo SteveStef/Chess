@@ -20,8 +20,9 @@ type Bitboard struct {
   whitePawns, whiteKnights, whiteBishops, whiteRooks, whiteQueens, whiteKing uint64
   blackPawns, blackKnights, blackBishops, blackRooks, blackQueens, blackKing uint64
   enPassant uint64
-  castlingRights uint64
+  castlingRights uint8 // 0x1 white king side, 0x2 white queen side, 0x4 black king side, 0x8 black queen side
   whiteTurn bool
+  whiteOnBottom bool
 }
 
 
@@ -81,8 +82,9 @@ func InitBoard(bitboard *Bitboard) {
   bitboard.whiteKing = uint64(0x10) << 56
   bitboard.blackKing = uint64(0x10)
   bitboard.enPassant = 0
-  bitboard.castlingRights = 0
+  bitboard.castlingRights = 0xC3 // 11000011
   bitboard.whiteTurn = true;
+  bitboard.whiteOnBottom = true;
 }
 
 func GenerateBoardFromFen(fen string, bitboard *Bitboard) {
@@ -111,6 +113,7 @@ var PieceMoveFuncs = map[string]func(*Bitboard, uint64, uint64) {
 
 func MakeMove(piece string, from uint64, to uint64, bitboard *Bitboard) {
 	if moveFunc, ok := PieceMoveFuncs[piece]; ok {
+    // =================================== updates enpassant rights ===================================
     bitboard.enPassant = 0
     // if the piece is a pawn and it is moving two squares forward then set the enPassant square to the square behind the pawn
     if piece == "wp" && (from >> 16) == to {
@@ -118,9 +121,50 @@ func MakeMove(piece string, from uint64, to uint64, bitboard *Bitboard) {
     } else if piece == "bp" && (from << 16) == to {
       bitboard.enPassant = from << 8
     } 
-
     //fmt.Println("En passant square:")
     //DisplayPieceLocation(bitboard.enPassant)
+
+    // if the move is en passant then remove the captured pawn (test this)
+    if piece == "wp" && (from << 1) == to {
+      bitboard.blackPawns &= ^(to >> 8)
+    } else if piece == "bp" && (from >> 1) == to {
+      bitboard.whitePawns &= ^(to << 8)
+    }
+
+    // ===================================== updating castling rights =====================================
+    if piece == "wk" {
+      bitboard.castlingRights &= 0xC0 // 11000000
+
+    } else if piece == "bk" {
+      bitboard.castlingRights &= 0x3 // 00000011
+
+    } else if piece == "wr" && from == uint64(1) << 63 { // rook is on the king side
+      bitboard.castlingRights &= 0xC2 // 11000010
+
+    } else if piece == "wr" && from == uint64(1) << 56 {
+      bitboard.castlingRights &= 0xC1 // 11000001
+
+    } else if piece == "br" && from == uint64(1) {
+      bitboard.castlingRights &= 0x83 // 10000011
+
+    } else if piece == "br" && from == uint64(1) << 7 {
+      bitboard.castlingRights &= 0x43 // 01000011
+    }
+
+    fmt.Println("Castling rights:")
+    fmt.Printf("%b\n", bitboard.castlingRights)
+
+    // if the move is about castling then move the rook as well
+    // if the king is being shifted to the left or right by 2 squares then the rook is being moved as well
+    if piece == "wk" && (from << 2) == to {
+
+    } else if piece == "wk" && (from >> 2) == to {
+
+    } else if piece == "bk" && (from << 2) == to {
+
+    } else if piece == "bk" && (from >> 2) == to {
+
+    }
 
 		moveFunc(bitboard, from, to)
     bitboard.whiteTurn = !bitboard.whiteTurn
@@ -149,17 +193,22 @@ func DisplayPieceLocation(piece uint64) {
 func GetValidMoves(typeOfPiece string, piece uint64, bitboard *Bitboard, Constants *BitboardConstants) []uint64 {
   if typeOfPiece == "wn" || typeOfPiece == "bn" {
     return GetKnightMoves(piece, bitboard, Constants, typeOfPiece == "wn")
+
   } else if typeOfPiece == "wp" || typeOfPiece == "bp" {
-    //                                              we on the bottom
-    return GetPawnMoves(piece, bitboard, Constants, typeOfPiece == "wp", typeOfPiece == "wp")
+    return GetPawnMoves(piece, bitboard, Constants, (typeOfPiece == "wp") == bitboard.whiteOnBottom, typeOfPiece == "wp")
+
   } else if typeOfPiece == "wr" || typeOfPiece == "br" {
     return GetRookMoves(piece, bitboard, Constants, typeOfPiece == "wr")
+
   } else if typeOfPiece == "wb" || typeOfPiece == "bb" {
     return GetBishopMoves(piece, bitboard, Constants, typeOfPiece == "wb")
+
   } else if typeOfPiece == "wq" || typeOfPiece == "bq" {
     return GetQueenMoves(piece, bitboard, Constants, typeOfPiece == "wq")
+
   } else if typeOfPiece == "wk" || typeOfPiece == "bk" {
-    return GetKingMoves(piece, bitboard, Constants, typeOfPiece == "wk")
+    return GetKingMoves(piece, bitboard, Constants, typeOfPiece == "wk", (typeOfPiece == "wk") == bitboard.whiteOnBottom)
+
   }
 
   return []uint64{}

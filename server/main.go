@@ -114,6 +114,7 @@ func main() {
 
   InitBoard(&bitboard)
   PrintBoard(&bitboard)
+  //DisplayPieceLocation(uint64(1) << 63)
 
   router := gin.Default()
 
