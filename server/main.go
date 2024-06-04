@@ -14,9 +14,8 @@ type MoveRes struct {
 }
 
 var bitboard Bitboard 
-var Constants BitboardConstants 
 
-func positionFromRowCol(row, col uint8) uint64 {
+func positionFromRowCol(row uint8, col uint8) uint64 {
   p := uint64(1) << 63 
   p = p >> (8 * row)
   p = p >> (8 - col-1)
@@ -49,7 +48,7 @@ func Moves(context *gin.Context) {
   }
 
   intPos := positionFromRowCol(move.Rank, move.File)
-  validMoves := GetValidMoves(move.Piece, intPos, &bitboard, &Constants)
+  validMoves := GetValidMoves(move.Piece, intPos, &bitboard)
 
   moveList := make([]MoveRes, len(validMoves))
   for i, pos := range validMoves {
@@ -98,19 +97,6 @@ func MovePiece(context *gin.Context) {
 }
 
 func main() {
-  Constants = BitboardConstants {
-    A_File: 0x0101010101010101,
-    B_File: 0x0202020202020202,
-    G_File: 0x4040404040404040,
-    H_File: 0x8080808080808080,
-    AB_File: 0x0303030303030303,
-    GH_File: 0xC0C0C0C0C0C0C0C0,
-
-    RANK_1: 0xFF00000000000000,
-    RANK_8: 0x00000000000000FF,
-
-    OnBoard: 0xFFFFFFFFFFFFFFFF,
-  }
 
   InitBoard(&bitboard)
   PrintBoard(&bitboard)

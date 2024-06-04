@@ -1,7 +1,7 @@
 package utils
 
 // ===================================BISHOP=======================================================================
-func GetKnightMoves(knightPosition uint64, bitboard *Bitboard, Constants *BitboardConstants, isWhite bool) []uint64 {
+func GetKnightMoves(knightPosition uint64, bitboard *Bitboard, isWhite bool) []uint64 {
   var moves []uint64
   var allPieces uint64
 
@@ -25,13 +25,13 @@ func GetKnightMoves(knightPosition uint64, bitboard *Bitboard, Constants *Bitboa
   for _, shiftAmount := range shiftAmounts {
     switch shiftAmount {
     case 17:
-      appendIfValid(func(pos uint64) uint64 { return pos << shiftAmount }, shiftAmount, Constants.A_File)
+      appendIfValid(func(pos uint64) uint64 { return pos << shiftAmount }, shiftAmount, bitboard.Constants.A_File)
     case 10:
-      appendIfValid(func(pos uint64) uint64 { return pos << shiftAmount }, shiftAmount, Constants.AB_File)
+      appendIfValid(func(pos uint64) uint64 { return pos << shiftAmount }, shiftAmount, bitboard.Constants.AB_File)
     case 15:
-      appendIfValid(func(pos uint64) uint64 { return pos << shiftAmount }, shiftAmount, Constants.H_File)
+      appendIfValid(func(pos uint64) uint64 { return pos << shiftAmount }, shiftAmount, bitboard.Constants.H_File)
     case 6:
-      appendIfValid(func(pos uint64) uint64 { return pos << shiftAmount }, shiftAmount, Constants.GH_File)
+      appendIfValid(func(pos uint64) uint64 { return pos << shiftAmount }, shiftAmount, bitboard.Constants.GH_File)
   }
   }
 
@@ -39,13 +39,13 @@ func GetKnightMoves(knightPosition uint64, bitboard *Bitboard, Constants *Bitboa
   for _, shiftAmount := range shiftAmounts {
     switch shiftAmount {
     case 17:
-      appendIfValid(func(pos uint64) uint64 { return pos >> shiftAmount }, shiftAmount, Constants.H_File)
+      appendIfValid(func(pos uint64) uint64 { return pos >> shiftAmount }, shiftAmount, bitboard.Constants.H_File)
     case 10:
-      appendIfValid(func(pos uint64) uint64 { return pos >> shiftAmount }, shiftAmount, Constants.GH_File)
+      appendIfValid(func(pos uint64) uint64 { return pos >> shiftAmount }, shiftAmount, bitboard.Constants.GH_File)
     case 15:
-      appendIfValid(func(pos uint64) uint64 { return pos >> shiftAmount }, shiftAmount, Constants.A_File)
+      appendIfValid(func(pos uint64) uint64 { return pos >> shiftAmount }, shiftAmount, bitboard.Constants.A_File)
     case 6:
-      appendIfValid(func(pos uint64) uint64 { return pos >> shiftAmount }, shiftAmount, Constants.AB_File)
+      appendIfValid(func(pos uint64) uint64 { return pos >> shiftAmount }, shiftAmount, bitboard.Constants.AB_File)
   }
   }
 
@@ -53,7 +53,7 @@ func GetKnightMoves(knightPosition uint64, bitboard *Bitboard, Constants *Bitboa
 }
 
 // =================================PAWN===========================================================================
-func GetPawnMoves(pawnPosition uint64, bitboard *Bitboard, Constants *BitboardConstants, onBottom bool, isWhite bool) []uint64 {
+func GetPawnMoves(pawnPosition uint64, bitboard *Bitboard, onBottom bool, isWhite bool) []uint64 {
   var moves []uint64
   var sameColorPieces uint64
   var oppositeColorPieces uint64
@@ -69,10 +69,10 @@ func GetPawnMoves(pawnPosition uint64, bitboard *Bitboard, Constants *BitboardCo
   }
 
   allPieces = sameColorPieces | oppositeColorPieces
-  if onBottom && ((pawnPosition >> shiftAmount) & allPieces) == 0 && pawnPosition & Constants.RANK_8 == 0 {
+  if onBottom && ((pawnPosition >> shiftAmount) & allPieces) == 0 && pawnPosition & bitboard.Constants.RANK_8 == 0 {
     moves = append(moves, pawnPosition >> shiftAmount)
 
-  } else if !onBottom && ((pawnPosition << shiftAmount) & allPieces) == 0 && pawnPosition & Constants.RANK_1 == 0 {
+  } else if !onBottom && ((pawnPosition << shiftAmount) & allPieces) == 0 && pawnPosition & bitboard.Constants.RANK_1 == 0 {
     moves = append(moves, pawnPosition << shiftAmount)
   }
 
@@ -118,7 +118,7 @@ func pawnHasMoved(pawnPosition uint64, onBottom bool) bool {
 
 // =================================ROOK===========================================================================
 // add go routine to check for moves in all directions
-func GetRookMoves(rookPosition uint64, bitboard *Bitboard, Constants *BitboardConstants, isWhite bool) []uint64 {
+func GetRookMoves(rookPosition uint64, bitboard *Bitboard, isWhite bool) []uint64 {
   var moves []uint64
   var sameColorPieces uint64
   var oppositeColorPieces uint64
@@ -132,7 +132,7 @@ func GetRookMoves(rookPosition uint64, bitboard *Bitboard, Constants *BitboardCo
   }
 
   shifted := rookPosition
-  for (shifted & Constants.RANK_8) == 0 { // while we're not at the top
+  for (shifted & bitboard.Constants.RANK_8) == 0 { // while we're not at the top
     shifted = shifted >> 8
     if (shifted & sameColorPieces) != 0 { break }
     moves = append(moves, shifted)
@@ -140,7 +140,7 @@ func GetRookMoves(rookPosition uint64, bitboard *Bitboard, Constants *BitboardCo
   }
 
   shifted = rookPosition
-  for (shifted & Constants.RANK_1 == 0) { // while we're not at the bottom
+  for (shifted & bitboard.Constants.RANK_1 == 0) { // while we're not at the bottom
     shifted = shifted << 8
     if (shifted & sameColorPieces) != 0 { break }
     moves = append(moves, shifted)
@@ -148,25 +148,25 @@ func GetRookMoves(rookPosition uint64, bitboard *Bitboard, Constants *BitboardCo
   }
 
   shifted = rookPosition
-  for (shifted & Constants.H_File == 0) {
+  for (shifted & bitboard.Constants.H_File == 0) {
     shifted = shifted << 1
     if (shifted & sameColorPieces) != 0 { break }
     moves = append(moves, shifted)
-    if (shifted & oppositeColorPieces) != 0 || (shifted & Constants.H_File) != 0 { break }
+    if (shifted & oppositeColorPieces) != 0 || (shifted & bitboard.Constants.H_File) != 0 { break }
   }
 
   shifted = rookPosition
-  for (shifted & Constants.A_File == 0) {
+  for (shifted & bitboard.Constants.A_File == 0) {
     shifted = shifted >> 1
     if (shifted & sameColorPieces) != 0 { break }
     moves = append(moves, shifted)
-    if (shifted & oppositeColorPieces) != 0 || (shifted & Constants.A_File) != 0 { break }
+    if (shifted & oppositeColorPieces) != 0 || (shifted & bitboard.Constants.A_File) != 0 { break }
   }
 
   return moves
 }
 
-func GetBishopMoves(bishopPosition uint64, bitboard *Bitboard, Constants *BitboardConstants, isWhite bool) []uint64 {
+func GetBishopMoves(bishopPosition uint64, bitboard *Bitboard, isWhite bool) []uint64 {
   var moves []uint64
   var sameColorPieces uint64
   var oppositeColorPieces uint64
@@ -180,7 +180,7 @@ func GetBishopMoves(bishopPosition uint64, bitboard *Bitboard, Constants *Bitboa
   }
 
   shifted := bishopPosition
-  for (shifted & Constants.RANK_8) == 0 && (shifted & Constants.H_File) == 0 { // while we're not at the top or right
+  for (shifted & bitboard.Constants.RANK_8) == 0 && (shifted & bitboard.Constants.H_File) == 0 { // while we're not at the top or right
     shifted = shifted >> 7
     if (shifted & sameColorPieces) != 0 { break }
     moves = append(moves, shifted)
@@ -188,7 +188,7 @@ func GetBishopMoves(bishopPosition uint64, bitboard *Bitboard, Constants *Bitboa
   }
 
   shifted = bishopPosition
-  for (shifted & Constants.RANK_8) == 0 && (shifted & Constants.A_File) == 0 { // while we're not at the top or left
+  for (shifted & bitboard.Constants.RANK_8) == 0 && (shifted & bitboard.Constants.A_File) == 0 { // while we're not at the top or left
     shifted = shifted >> 9
     if (shifted & sameColorPieces) != 0 { break }
     moves = append(moves, shifted)
@@ -196,7 +196,7 @@ func GetBishopMoves(bishopPosition uint64, bitboard *Bitboard, Constants *Bitboa
   }
 
   shifted = bishopPosition
-  for (shifted & Constants.RANK_1 == 0) && (shifted & Constants.H_File == 0) { // while we're not at the bottom or right
+  for (shifted & bitboard.Constants.RANK_1 == 0) && (shifted & bitboard.Constants.H_File == 0) { // while we're not at the bottom or right
     shifted = shifted << 9
     if (shifted & sameColorPieces) != 0 { break }
     moves = append(moves, shifted)
@@ -204,7 +204,7 @@ func GetBishopMoves(bishopPosition uint64, bitboard *Bitboard, Constants *Bitboa
   }
   
   shifted = bishopPosition
-  for (shifted & Constants.RANK_1 == 0) && (shifted & Constants.A_File == 0) { // while we're not at the bottom or left
+  for (shifted & bitboard.Constants.RANK_1 == 0) && (shifted & bitboard.Constants.A_File == 0) { // while we're not at the bottom or left
     shifted = shifted << 7
     if (shifted & sameColorPieces) != 0 { break }
     moves = append(moves, shifted)
@@ -214,15 +214,15 @@ func GetBishopMoves(bishopPosition uint64, bitboard *Bitboard, Constants *Bitboa
   return moves
 }
 
-func GetQueenMoves(queenPosition uint64, bitboard *Bitboard, Constants *BitboardConstants, isWhite bool) []uint64 {
-  crossMoves := GetRookMoves(queenPosition, bitboard, Constants, isWhite)
-  diagonalMoves := GetBishopMoves(queenPosition, bitboard, Constants, isWhite)
+func GetQueenMoves(queenPosition uint64, bitboard *Bitboard, isWhite bool) []uint64 {
+  crossMoves := GetRookMoves(queenPosition, bitboard, isWhite)
+  diagonalMoves := GetBishopMoves(queenPosition, bitboard, isWhite)
 
   allMoves := append(crossMoves, diagonalMoves...)
   return allMoves
 }
 
-func GetKingMoves(kingPosition uint64, bitboard *Bitboard, Constants *BitboardConstants, isWhite bool, onBottom bool) []uint64 {
+func GetKingMoves(kingPosition uint64, bitboard *Bitboard, isWhite bool, onBottom bool) []uint64 {
   var moves []uint64
   var sameColorPieces uint64
   var allPieces uint64
@@ -243,7 +243,7 @@ func GetKingMoves(kingPosition uint64, bitboard *Bitboard, Constants *BitboardCo
   }
 
   for _, move := range possibleMoves {
-    if (move & Constants.OnBoard) != 0 && (move & sameColorPieces) == 0 {
+    if (move & bitboard.Constants.OnBoard) != 0 && (move & sameColorPieces) == 0 {
       moves = append(moves, move)
     }
   }
