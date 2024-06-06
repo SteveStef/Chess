@@ -89,11 +89,12 @@ func MovePiece(context *gin.Context) {
   
   intPos := positionFromRowCol(move.Rank, move.File)
   newPos := positionFromRowCol(move.NewRank, move.NewFile)
+
   MakeMove(move.Piece, intPos, newPos, &bitboard)
   PrintBoard(&bitboard)
+  board := GetBoardState(&bitboard)
 
-  fmt.Println(move)
-  context.IndentedJSON(http.StatusOK, "Piece moved")
+  context.IndentedJSON(http.StatusOK, board)
 }
 
 func main() {

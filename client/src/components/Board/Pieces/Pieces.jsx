@@ -14,6 +14,7 @@ const Pieces = ({ updateHighlight, nothigh }) => {
     const x = 7 - Math.floor((e.clientY - top) / size);
     return { x, y };
   };
+  console.log(state);
 
   const placePiece = async (piece, oldRank, oldFile, newRank, newFile) => {
     try {
@@ -27,7 +28,7 @@ const Pieces = ({ updateHighlight, nothigh }) => {
         requestOptions,
       );
       const data = await response.json();
-      console.log(data);
+      return data;
     } catch (err) {
       console.log(err);
     }
@@ -37,12 +38,20 @@ const Pieces = ({ updateHighlight, nothigh }) => {
     const newPosition = copyPosition(state);
     const { x, y } = calculateCoords(e);
     const [p, rank, file] = e.dataTransfer.getData("text").split(",");
+
+    // this will be the new table state 
+
+    const response = await placePiece(p, rank, file, x, y);
+
     nothigh();
-    console.log("dropping", p, x, y);
-    newPosition[rank][file] = "";
     newPosition[x][y] = p;
-    setState(newPosition);
-    await placePiece(p, rank, file, x, y);
+    newPosition[rank][file] = "";
+    //console.log("dropping", p, x, y);
+    setState(response);
+
+    console.log(response);
+    console.log(newPosition);
+
   };
 
   const onDragOver = (e) => {
