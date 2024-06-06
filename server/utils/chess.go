@@ -25,11 +25,11 @@ type BitboardConstants struct {
 type Bitboard struct {
   whitePawns, whiteKnights, whiteBishops, whiteRooks, whiteQueens, whiteKing uint64
   blackPawns, blackKnights, blackBishops, blackRooks, blackQueens, blackKing uint64
-  enPassant uint64
-  castlingRights uint8 // 0x1 white king side, 0x2 white queen side, 0x4 black king side, 0x8 black queen side
-  whiteTurn bool
-  whiteOnBottom bool
   Constants BitboardConstants
+  castlingRights uint8
+  whiteOnBottom bool
+  enPassant uint64
+  whiteTurn bool
 }
 
 
@@ -143,8 +143,6 @@ func MakeMove(piece string, from uint64, to uint64, bitboard *Bitboard) {
 
     // =================================== remving pawn from enpassant ===================================
     if (piece == "wp" || piece == "bp") && (to & bitboard.enPassant) != 0 {
-      // if to is on the 6th rank then remove the square below it
-      // else if the to is on the 3rd rank then remove the square above it
       if (to & bitboard.Constants.RANK_6) != 0 {
         if piece == "wp" {
           bitboard.blackPawns &= ^(to << 8)
@@ -158,7 +156,6 @@ func MakeMove(piece string, from uint64, to uint64, bitboard *Bitboard) {
           bitboard.whitePawns &= ^(to >> 8)
         }
       }
-
     }
 
     // =================================== updates enpassant rights ===================================
@@ -168,27 +165,44 @@ func MakeMove(piece string, from uint64, to uint64, bitboard *Bitboard) {
     } else if piece == "bp" && (from << 16) == to {
       bitboard.enPassant = from << 8
     } 
+
     //fmt.Println("En passant square:")
     //DisplayPieceLocation(bitboard.enPassant)
 
-
     // ===================================== updating castling rights =====================================
+    bottomLeft := uint64(1) << 56
+    bottomRight := uint64(1) << 63
+    topLeft := uint64(1)
+    topRight := uint64(1) << 7
+
     if piece == "wk" {
       bitboard.castlingRights &= 0xC0 // 11000000
 
     } else if piece == "bk" {
       bitboard.castlingRights &= 0x3 // 00000011
 
-    } else if piece == "wr" && from == uint64(1) << 63 { // rook is on the king side
+    } else if piece == "wr" && bitboard.whiteOnBottom && from == bottomRight {
       bitboard.castlingRights &= 0xC2 // 11000010
 
-    } else if piece == "wr" && from == uint64(1) << 56 {
+    } else if piece == "wr" && bitboard.whiteOnBottom && from == bottomLeft {
       bitboard.castlingRights &= 0xC1 // 11000001
 
-    } else if piece == "br" && from == uint64(1) {
+    } else if piece == "wr" && !bitboard.whiteOnBottom && from == topLeft { 
+      bitboard.castlingRights &= 0xC2 // 11000010
+
+    } else if piece == "wr" && !bitboard.whiteOnBottom && from == topRight { 
+      bitboard.castlingRights &= 0xC1 // 11000001
+
+    } else if piece == "br" && bitboard.whiteOnBottom && from == topLeft {
       bitboard.castlingRights &= 0x83 // 10000011
 
-    } else if piece == "br" && from == uint64(1) << 7 {
+    } else if piece == "br" && bitboard.whiteOnBottom && from == topRight {
+      bitboard.castlingRights &= 0x43 // 01000011
+
+    } else if piece == "br" && !bitboard.whiteOnBottom && from == bottomLeft {
+      bitboard.castlingRights &= 0x83 // 10000011
+
+    } else if piece == "br" && !bitboard.whiteOnBottom && from == bottomRight {
       bitboard.castlingRights &= 0x43 // 01000011
     }
 
