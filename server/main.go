@@ -13,6 +13,21 @@ type MoveRes struct {
   Rank uint8`json:"Rank"`
 }
 
+var PieceMap = map[string]uint8 {
+  "wp": WHITE_PAWN,
+  "wr": WHITE_ROOK,
+  "wn": WHITE_KNIGHT,
+  "wb": WHITE_BISHOP,
+  "wq": WHITE_QUEEN,
+  "wk": WHITE_KING,
+  "bp": BLACK_PAWN,
+  "br": BLACK_ROOK,
+  "bn": BLACK_KNIGHT,
+  "bb": BLACK_BISHOP,
+  "bq": BLACK_QUEEN,
+  "bk": BLACK_KING,
+}
+
 var bitboard Bitboard 
 
 func positionFromRowCol(row uint8, col uint8) uint64 {
@@ -48,7 +63,7 @@ func Moves(context *gin.Context) {
   }
 
   intPos := positionFromRowCol(move.Rank, move.File)
-  validMoves := GetValidMoves(move.Piece, intPos, &bitboard)
+  validMoves := GetValidMoves(PieceMap[move.Piece], intPos, &bitboard)
 
   moveList := make([]MoveRes, len(validMoves))
   for i, pos := range validMoves {
@@ -67,7 +82,6 @@ func GenerateBoard(context *gin.Context) {
     fmt.Println(err)
     return
   }
-  GenerateBoardFromFen(fen, &bitboard)
   context.IndentedJSON(http.StatusOK, "Board generated")
 }
 
@@ -90,8 +104,9 @@ func MovePiece(context *gin.Context) {
   intPos := positionFromRowCol(move.Rank, move.File)
   newPos := positionFromRowCol(move.NewRank, move.NewFile)
 
-  MakeMove(move.Piece, intPos, newPos, &bitboard)
-  PrintBoard(&bitboard)
+  pieceType := PieceMap[move.Piece]
+
+  MakeMove(pieceType, intPos, newPos, &bitboard)
   board := GetBoardState(&bitboard)
 
   context.IndentedJSON(http.StatusOK, board)
@@ -100,7 +115,7 @@ func MovePiece(context *gin.Context) {
 func main() {
 
   InitBoard(&bitboard)
-  PrintBoard(&bitboard)
+  PrintGame(&bitboard)
   //DisplayPieceLocation(uint64(1) << 63)
 
   router := gin.Default()
