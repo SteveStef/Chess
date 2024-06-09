@@ -2,7 +2,6 @@
 
 var whitePieces unint64
 
-
 bitboard.Constants.F1DL
 bitboard.Constants.F1DR
 bitboard.Constants.F1UP
@@ -14,25 +13,21 @@ bitboard.Constants.G1UP
 if moving the king, and if can castling kings side:
    // no whites on diagainal and there is black bishops or queen
    if (F1DL & whitePieces == 0) && (F1DL & blackBishop | bq >= 0)
-   	then find first black piece with mailbox and if its a bishop or queen then don't 	       add to the move list.
+   	then find first black piece with mailbox and if its a bishop or queen then don't add to the move list.
 
 - Use this same logic for the other pieces and locations.
+- also keep in mind that the king can't castle if the king is in check
 
 ============================= OPTIMIZATIONS ============================================
 1. Use mailbox to check if a piece is present in move generation
 2. Restructure the if statements in the move generation and MakeMove funcitons. 
 3. Make a map for getting the index of mailbox from the uint64 (A square on the board)
-4. Maybe get rid of the onBottom conditions
 
 =================================== CHESS MOVEMENT ======================================
-1. Pawn Promotion
-2. Stopping castling if square is being attacked
+1. Stopping castling if square is being attacked
+2. Allow choice for pawn promotion (optional)
 
 ======================================= AI ============================================
 1. Make a random AI first and connect it to the frontent
-2. Make the choice whether to add the change black to onBottom or not
 
-
-
-
-
+======================================= NOTES ===========================================

@@ -5,7 +5,7 @@ import (
   "math"
 )
 
-// m c k q r b n p
+// w b k q r b n p
 // 0 0 0 0 0 0 0 0
 
 const (
@@ -17,13 +17,12 @@ const (
   BLACK_QUEEN     uint8 = 0x50
   BLACK_KING      uint8 = 0x60
 
-  WHITE_PAWN      uint8 = 0x01
-  WHITE_KNIGHT    uint8 = 0x02
-  WHITE_BISHOP    uint8 = 0x04
-  WHITE_ROOK      uint8 = 0x08
-  WHITE_QUEEN     uint8 = 0x10
-  WHITE_KING      uint8 = 0x20
-
+  WHITE_PAWN      uint8 = 0x81
+  WHITE_KNIGHT    uint8 = 0x82
+  WHITE_BISHOP    uint8 = 0x84
+  WHITE_ROOK      uint8 = 0x88
+  WHITE_QUEEN     uint8 = 0x90
+  WHITE_KING      uint8 = 0xA0
   // this is for general use
   A_File uint64 = 0x0101010101010101
   B_File uint64 = 0x0202020202020202
@@ -42,6 +41,7 @@ const (
   RANK_8 uint64 = 0x00000000000000FF
 
   OnBoard uint64 = 0xFFFFFFFFFFFFFFFF
+  MOVED uint8 = 0x80
 )
 
 type Bitboard struct {
@@ -101,7 +101,6 @@ func GetMailBoxIndex(square uint64) int {
 }
 
 func MakeMove(piece uint8, from uint64, to uint64, bitboard *Bitboard) {
-
   // =================================== removing enemy pawn from enpassant ===================================
   if (piece & 0x1 > 0) && (to & bitboard.enPassant) != 0 {
     if (to & RANK_6) != 0 {
@@ -197,16 +196,28 @@ func MakeMove(piece uint8, from uint64, to uint64, bitboard *Bitboard) {
     }
   }
 
+  // Moving the pieces
   toLocation := GetMailBoxIndex(to)
-  bitboard.mailbox[GetMailBoxIndex(from)] = 0
-  bitboard.mailbox[toLocation] = piece
-
   if capturePiece, ok := PieceCaptureFuncs[bitboard.mailbox[toLocation]]; ok {
     capturePiece(bitboard, to)
   }
 
+  bitboard.mailbox[GetMailBoxIndex(from)] = 0
+  bitboard.mailbox[toLocation] = piece
+
   if movePiece, ok := PieceMoveFuncs[piece]; ok {
     movePiece(bitboard, from, to)
+    // =================================== Pawn Promotion ===================================
+    if piece == WHITE_PAWN && (to & RANK_8) != 0 {
+      bitboard.whitePawns ^= to
+      bitboard.whiteQueens |= to
+      bitboard.mailbox[toLocation] = WHITE_QUEEN
+    } else if piece == BLACK_PAWN && (to & RANK_1) != 0 {
+      bitboard.blackPawns ^= to
+      bitboard.blackQueens |= to
+      bitboard.mailbox[toLocation] = BLACK_QUEEN
+    }
+    // ====================================================================================== 
   }
 
   bitboard.whiteTurn = !bitboard.whiteTurn
@@ -218,7 +229,7 @@ func GetValidMoves(typeOfPiece uint8, piece uint64, bitboard *Bitboard) []uint64
     return GetKnightMoves(piece, bitboard, typeOfPiece == WHITE_KNIGHT)
 
   } else if typeOfPiece & 0x1 > 0 {
-    return GetPawnMoves(piece, bitboard, (typeOfPiece == WHITE_PAWN) == bitboard.whiteOnBottom, typeOfPiece == WHITE_PAWN)
+    return GetPawnMoves(piece, bitboard, typeOfPiece == WHITE_PAWN)
 
   } else if typeOfPiece & 0x8 > 0 {
     return GetRookMoves(piece, bitboard, typeOfPiece == WHITE_ROOK)
@@ -230,13 +241,14 @@ func GetValidMoves(typeOfPiece uint8, piece uint64, bitboard *Bitboard) []uint64
     return GetQueenMoves(piece, bitboard, typeOfPiece == WHITE_QUEEN)
 
   } else if typeOfPiece & 0x20 > 0 {
-    return GetKingMoves(piece, bitboard, typeOfPiece == WHITE_KING, (typeOfPiece == WHITE_KING) == bitboard.whiteOnBottom)
+    return GetKingMoves(piece, bitboard, typeOfPiece == WHITE_KING)
 
   }
 
   return []uint64{}
 }
-// =================================== GETTING BOARD STATE FOR FRONTEND ===================================j
+// ================================================== NO NEED TO TOUCH ==================================================
+// =================================== GETTING BOARD STATE FOR FRONTEND ===================================
 func GetBoardState(bitboard *Bitboard) [8][8]string {
   var creatingBoard [8][8]string
   pieceFields := []*uint64{

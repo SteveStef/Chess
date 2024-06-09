@@ -53,11 +53,12 @@ func GetKnightMoves(knightPosition uint64, bitboard *Bitboard, isWhite bool) []u
 }
 
 // =================================PAWN=============================================
-func GetPawnMoves(pawnPosition uint64, bitboard *Bitboard, onBottom bool, isWhite bool) []uint64 {
+func GetPawnMoves(pawnPosition uint64, bitboard *Bitboard, isWhite bool) []uint64 {
   var moves []uint64
   var sameColorPieces uint64
   var oppositeColorPieces uint64
   var allPieces uint64
+
   shiftAmount := uint64(8)
 
   if isWhite {
@@ -69,51 +70,50 @@ func GetPawnMoves(pawnPosition uint64, bitboard *Bitboard, onBottom bool, isWhit
   }
 
   allPieces = sameColorPieces | oppositeColorPieces
-  if onBottom && ((pawnPosition >> shiftAmount) & allPieces) == 0 && pawnPosition & RANK_8 == 0 {
+
+  if isWhite && ((pawnPosition >> shiftAmount) & allPieces) == 0 && pawnPosition & RANK_8 == 0 {
     moves = append(moves, pawnPosition >> shiftAmount)
 
-  } else if !onBottom && ((pawnPosition << shiftAmount) & allPieces) == 0 && pawnPosition & RANK_1 == 0 {
+  } else if !isWhite && ((pawnPosition << shiftAmount) & allPieces) == 0 && pawnPosition & RANK_1 == 0 {
     moves = append(moves, pawnPosition << shiftAmount)
   }
 
   // double move if pawn hasn't moved
-  if onBottom && !pawnHasMoved(pawnPosition, onBottom) && len(moves) > 0 {
-    moves = append(moves, pawnPosition >> 16)
-  } else if !onBottom && !pawnHasMoved(pawnPosition, onBottom) && len(moves) > 0 {
-    moves = append(moves, pawnPosition << 16)
+  upshift2 := pawnPosition >> 16
+  downshift2 := pawnPosition << 16
+
+
+  if isWhite {
+    hasMoved := pawnPosition & (uint64(0xFF) << 48) == 0
+    if !hasMoved && len(moves) > 0 && upshift2 & allPieces == 0 {
+      moves = append(moves, upshift2)
+    }
+  } else {
+    hasMoved := pawnPosition & (uint64(0xFF) << 8) == 0
+    if !hasMoved && len(moves) > 0 && downshift2 & allPieces == 0 {
+      moves = append(moves, downshift2)
+    }
   }
 
   // capture moves
   tmpMove := pawnPosition >> 7
-  if onBottom && (tmpMove & oppositeColorPieces != 0 || tmpMove & bitboard.enPassant != 0) {
+  if isWhite && (tmpMove & oppositeColorPieces != 0 || tmpMove & bitboard.enPassant != 0) {
     moves = append(moves, tmpMove)
   }
   tmpMove = pawnPosition >> 9
-  if onBottom && (tmpMove & oppositeColorPieces != 0 || tmpMove & bitboard.enPassant != 0) {
+  if isWhite && (tmpMove & oppositeColorPieces != 0 || tmpMove & bitboard.enPassant != 0) {
     moves = append(moves, tmpMove)
   }
   tmpMove = pawnPosition << 7
-  if !onBottom && (tmpMove & oppositeColorPieces != 0 || tmpMove & bitboard.enPassant != 0) {
+  if !isWhite && (tmpMove & oppositeColorPieces != 0 || tmpMove & bitboard.enPassant != 0) {
     moves = append(moves, tmpMove)
   }
   tmpMove = pawnPosition << 9
-  if !onBottom && (tmpMove & oppositeColorPieces != 0 || tmpMove & bitboard.enPassant != 0) {
+  if !isWhite && (tmpMove & oppositeColorPieces != 0 || tmpMove & bitboard.enPassant != 0) {
     moves = append(moves, tmpMove)
   }
 
   return moves
-}
-
-// helper function to check if pawn has moved
-func pawnHasMoved(pawnPosition uint64, onBottom bool) bool {
-  var initialPawnPosition uint64
-  if onBottom {
-    initialPawnPosition = uint64(0xFF) << 48
-  } else {
-    initialPawnPosition = uint64(0xFF) << 8
-  }
-  result := initialPawnPosition & pawnPosition
-  return result == 0
 }
 
 // =================================ROOK===========================================================================
@@ -222,8 +222,7 @@ func GetQueenMoves(queenPosition uint64, bitboard *Bitboard, isWhite bool) []uin
   return allMoves
 }
 
-// IF your are not going to switch black and white from bottom to top then you can remove the onBottom parameter and extra logic
-func GetKingMoves(kingPosition uint64, bitboard *Bitboard, isWhite bool, onBottom bool) []uint64 { // onbottom = white on bottom
+func GetKingMoves(kingPosition uint64, bitboard *Bitboard, isWhite bool) []uint64 { // onbottom = white on bottom
   var moves []uint64
   var sameColorPieces uint64
   var allPieces uint64
@@ -250,37 +249,21 @@ func GetKingMoves(kingPosition uint64, bitboard *Bitboard, isWhite bool, onBotto
   }
 
   if isWhite && (bitboard.castlingRights & 1 != 0) { // white king side
-    if onBottom {
-      if (kingPosition << 1) & allPieces == 0 && (kingPosition << 2) & allPieces == 0 { moves = append(moves, kingPosition << 2) }
-    } else {
-      if (kingPosition >> 1) & allPieces == 0 && (kingPosition >> 2) & allPieces == 0 { moves = append(moves, kingPosition >> 2) }
-    }
+    if (kingPosition << 1) & allPieces == 0 && (kingPosition << 2) & allPieces == 0 { moves = append(moves, kingPosition << 2) }
   }
 
   if isWhite && (bitboard.castlingRights & 2 != 0) { // white queen side 
-    if onBottom {
-      if (kingPosition >> 1) & allPieces == 0 && (kingPosition >> 2) & allPieces == 0 {
-        moves = append(moves, kingPosition >> 2) 
-      }
-    } else {
-      if (kingPosition << 1) & allPieces == 0 && (kingPosition << 2) & allPieces == 0 { moves = append(moves, kingPosition << 2) }
+    if (kingPosition >> 1) & allPieces == 0 && (kingPosition >> 2) & allPieces == 0 {
+      moves = append(moves, kingPosition >> 2) 
     }
   }
 
   if !isWhite && (bitboard.castlingRights & 0x80 != 0) { // black king side
-    if !onBottom { // onBottom = white on bottom
-      if (kingPosition << 1) & allPieces == 0 && (kingPosition << 2) & allPieces == 0 { moves = append(moves, kingPosition << 2) }
-    } else {
-      if (kingPosition >> 1) & allPieces == 0 && (kingPosition >> 2) & allPieces == 0 { moves = append(moves, kingPosition >> 2) }
-    }
+    if (kingPosition << 1) & allPieces == 0 && (kingPosition << 2) & allPieces == 0 { moves = append(moves, kingPosition << 2) }
   }
 
   if !isWhite && (bitboard.castlingRights & 0x40 != 0) { // black queen side
-    if !onBottom {
-      if (kingPosition >> 1) & allPieces == 0 && (kingPosition >> 2) & allPieces == 0 { moves = append(moves, kingPosition >> 2) }
-    } else {
-      if (kingPosition << 1) & allPieces == 0 && (kingPosition << 2) & allPieces == 0 { moves = append(moves, kingPosition << 2) }
-    }
+    if (kingPosition >> 1) & allPieces == 0 && (kingPosition >> 2) & allPieces == 0 { moves = append(moves, kingPosition >> 2) }
   }
 
   return moves
