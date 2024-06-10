@@ -116,7 +116,13 @@ func main() {
 
   InitBoard(&bitboard)
   PrintGame(&bitboard)
-  //DisplayPieceLocation(uint64(1) << 63)
+
+  //tmp := uint64(1) << 56 >> 8
+
+  //fmt.Println(tmp)
+  //DisplayPieceLocation(tmp)
+
+  ShowMailbox(&bitboard)
 
   router := gin.Default()
 

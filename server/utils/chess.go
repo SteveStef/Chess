@@ -76,6 +76,7 @@ var PieceMoveFuncs = map[uint8]func(*Bitboard, uint64, uint64) {
 }
 
 var PieceCaptureFuncs = map[uint8]func(*Bitboard, uint64) {
+  0: func(b *Bitboard, to uint64) {},
   BLACK_PAWN: func(b *Bitboard, to uint64) { b.blackPawns ^= to },
   WHITE_PAWN: func(b *Bitboard, to uint64) { b.whitePawns ^= to },
 
@@ -93,7 +94,6 @@ var PieceCaptureFuncs = map[uint8]func(*Bitboard, uint64) {
 
   BLACK_KING: func(b *Bitboard, to uint64) { b.blackKing ^= to },
   WHITE_KING: func(b *Bitboard, to uint64) { b.whiteKing ^= to },
-  0: func(b *Bitboard, to uint64) {},
 }
 
 func GetMailBoxIndex(square uint64) int {
@@ -428,4 +428,14 @@ func printBoard(bitboard *Bitboard) {
     fmt.Println()
   }
 }
+
+func ShowMailbox(bitboard *Bitboard) {
+  for i := 0; i < 8; i++ {
+    for j := 0; j < 8; j++ {
+      fmt.Printf("%d ", i*8 + j)
+    }
+    fmt.Println()
+  }
+}
+
 

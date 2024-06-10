@@ -28,6 +28,7 @@ if moving the king, and if can castling kings side:
 2. Allow choice for pawn promotion (optional)
 
 ======================================= AI ============================================
-1. Make a random AI first and connect it to the frontent
+1. Make a undo move function
+2. Make a random AI first and connect it to the frontent
 
 ======================================= NOTES ===========================================
