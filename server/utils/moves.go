@@ -1,5 +1,4 @@
 package utils
-import "fmt"
 
 // ===================================BISHOP=======================================================================
 func GetKnightMoves(knightPosition uint64, bitboard *Bitboard, isWhite bool) []uint64 {
@@ -249,44 +248,42 @@ func GetKingMoves(kingPosition uint64, bitboard *Bitboard, isWhite bool) []uint6
     }
   }
 
-  if isWhite && (bitboard.castlingRights & 1 != 0) { // white king side
-    attacked := squaresAreGettingAttacked(bitboard, isWhite, true)
+  rights := squaresAreGettingAttacked(bitboard, isWhite)
 
-    fmt.Print("Getting Attacked: ")
-    fmt.Println(attacked)
-
-    if !attacked && (kingPosition << 1) & allPieces == 0 && (kingPosition << 2) & allPieces == 0 { moves = append(moves, kingPosition << 2) }
+  if isWhite && (rights & 1 != 0) { // white king side
+    if (kingPosition << 1) & allPieces == 0 && (kingPosition << 2) & allPieces == 0 { moves = append(moves, kingPosition << 2) }
   }
 
-  if isWhite && (bitboard.castlingRights & 2 != 0) { // white queen side 
+  if isWhite && (rights & 2 != 0) { // white queen side 
     if (kingPosition >> 1) & allPieces == 0 && (kingPosition >> 2) & allPieces == 0 {
       moves = append(moves, kingPosition >> 2) 
     }
   }
 
-  if !isWhite && (bitboard.castlingRights & 0x80 != 0) { // black king side
+  if !isWhite && (rights & 0x80 != 0) { // black king side
     if (kingPosition << 1) & allPieces == 0 && (kingPosition << 2) & allPieces == 0 { moves = append(moves, kingPosition << 2) }
   }
 
-  if !isWhite && (bitboard.castlingRights & 0x40 != 0) { // black queen side
+  if !isWhite && (rights & 0x40 != 0) { // black queen side
     if (kingPosition >> 1) & allPieces == 0 && (kingPosition >> 2) & allPieces == 0 { moves = append(moves, kingPosition >> 2) }
   }
 
   return moves
 }
 
-func squaresAreGettingAttacked(bitboard *Bitboard, isWhite bool, isKingside bool) bool {
+func squaresAreGettingAttacked(bitboard *Bitboard, isWhite bool) uint8 {
+  rights := bitboard.castlingRights
+
   if isWhite {
     // ==================== Checking the knights ============================
     kingSideSquareAttackers := uint64(62197173760032768)
     queenSideSquareAttackers := uint64(35816591274803200)
-    if isKingside && kingSideSquareAttackers & bitboard.blackKnights > 0 {
-      return  true
-    } else if !isKingside && queenSideSquareAttackers & bitboard.blackKnights > 0 {
-      return true
-    }
 
-    fmt.Println("Knights are not attacking")
+    if kingSideSquareAttackers & bitboard.blackKnights > 0 {
+      rights &= 0xC2
+    } else if queenSideSquareAttackers & bitboard.blackKnights > 0 {
+      rights &= 0xC1
+    }
 
     // ========================== Checking the rooks/queens ====================
     checkRank := func(start int) bool {
@@ -301,13 +298,13 @@ func squaresAreGettingAttacked(bitboard *Bitboard, isWhite bool, isKingside bool
       return false
     }
 
-    if isKingside {
-      if checkRank(62-8) || checkRank(61-8) || checkRank(60-8) { return true }
-    } else {
-      if checkRank(57-8) || checkRank(58-8) || checkRank(59-8) || checkRank(60-8) { return true }
+    if checkRank(62-8) || checkRank(61-8) || checkRank(60-8) { // king side
+      rights &= 0xC2
     }
 
-    fmt.Println("no rooks or queens attacking")
+    if checkRank(57-8) || checkRank(58-8) || checkRank(59-8) || checkRank(60-8) { // queen side
+      rights &= 0xC1
+    }
 
     // ========================== Checking the bishops/queens ====================
     checkDiagonal := func(start int, increment int) bool {
@@ -322,37 +319,113 @@ func squaresAreGettingAttacked(bitboard *Bitboard, isWhite bool, isKingside bool
       return false
     }
 
-    if isKingside {
-      if checkDiagonal(61, -7) || checkDiagonal(61, -9) || checkDiagonal(62, -7) || checkDiagonal(62, -9) { return true }
-    } else {
-      if checkDiagonal(57, -7) || checkDiagonal(57, -9) || checkDiagonal(58, -7) || checkDiagonal(58, -9) || checkDiagonal(59, -7) || checkDiagonal(59, -9) { return true }
+    if checkDiagonal(61, -7) || checkDiagonal(61, -9) || checkDiagonal(62, -7) || checkDiagonal(62, -9) { // king side
+      rights &= 0xC2
     }
 
-    fmt.Println("no bishops or queens attacking")
+    if checkDiagonal(57, -7) || checkDiagonal(57, -9) || checkDiagonal(58, -7) || checkDiagonal(58, -9) || checkDiagonal(59, -7) || checkDiagonal(59, -9) {
+      rights &= 0xC1
+    }
 
     // ========================= pawn ========================================
-    if isKingside {
-      pawnAttackers := uint64(69805794224242688)
-      if pawnAttackers & bitboard.blackPawns > 0 { return true }
-    } else {
-      pawnAttackers := uint64(17732923532771328)
-      if pawnAttackers & bitboard.blackPawns > 0 { return true }
+    pawnAttackers := uint64(69805794224242688)
+    if pawnAttackers & bitboard.blackPawns > 0 {
+      rights &= 0xC2
     }
-    fmt.Println("no pawns attacking")
+
+    pawnAttackers = uint64(17732923532771328)
+    if pawnAttackers & bitboard.blackPawns > 0 {
+      rights &= 0xC1
+    }
 
     // ========================= king ========================================
-    if isKingside {
-      kingAttackers := uint64(54043195528445952)
-      if kingAttackers & bitboard.blackKing > 0 { return true }
-    } else {
-      kingAttackers := uint64(1970324836974592)
-      if kingAttackers & bitboard.blackKing > 0 { return true }
+    kingAttackers := uint64(54043195528445952)
+    if kingAttackers & bitboard.blackKing > 0 {
+      rights &= 0xC2
     }
-    fmt.Println("no king attacking")
+
+    kingAttackers = uint64(1970324836974592)
+    if kingAttackers & bitboard.blackKing > 0 {
+      rights &= 0xC1
+    }
 
   } else { // this is for black
+    // ==================== Checking the knights ============================
+    kingSideSquareAttackers := uint64(16309248)
+    queenSideSquareAttackers := uint64(4161280)
+    if kingSideSquareAttackers & bitboard.whiteKnights > 0 {
+      rights &= 0x43
+    }
 
+    if queenSideSquareAttackers & bitboard.whiteKnights > 0 {
+      rights &= 0x83
+    }
+
+
+    // ========================== Checking the rooks/queens ====================
+    checkRank := func(start int) bool {
+      for start < 64 {
+        if bitboard.mailbox[start] == WHITE_ROOK || bitboard.mailbox[start] == WHITE_QUEEN {
+          return true
+        } else if bitboard.mailbox[start] != 0 {
+          return false
+        }
+        start += 8
+      }
+      return false
+    }
+
+    if checkRank(1+8) || checkRank(2+8) || checkRank(3+8) { // king side
+      rights &= 0x43
+    }
+
+    if checkRank(4+8) || checkRank(5+8) || checkRank(6+8) || checkRank(3+8) { // queen side
+      rights &= 0x83
+    }
+
+    // ========================== Checking the bishops/queens ====================
+    checkDiagonal := func(start int, increment int) bool {
+      for start < 64 {
+        if bitboard.mailbox[start] == WHITE_BISHOP || bitboard.mailbox[start] == WHITE_QUEEN {
+          return true
+        } else if bitboard.mailbox[start] != 0 {
+          return false
+        }
+        start += increment
+      }
+      return false
+    }
+
+    if checkDiagonal(2, 7) || checkDiagonal(2, 9) || checkDiagonal(1, 7) || checkDiagonal(1, 9) { // king side
+      rights &= 0x43
+    }
+
+    if checkDiagonal(4, 7) || checkDiagonal(4, 9) || checkDiagonal(5, 7) || checkDiagonal(5, 9) || checkDiagonal(6, 7) || checkDiagonal(6, 9) {
+      rights &= 0x83
+    }
+
+    // ========================= pawn ========================================
+    pawnAttackers := uint64(71776119061217280) // check these numbers
+    if pawnAttackers & bitboard.whitePawns > 0 {
+      rights &= 0x43
+    }
+
+    pawnAttackers = uint64(4629771061636907072) // check these numbers
+    if pawnAttackers & bitboard.whitePawns > 0 {
+      rights &= 0x83
+    }
+
+    // ========================= king ========================================
+    kingAttackers := uint64(1152921504606846976) // check these numbers
+    if kingAttackers & bitboard.whiteKing > 0 {
+      rights &= 0x43
+    }
+
+    kingAttackers = uint64(288230376151711744) // check these numbers
+    if kingAttackers & bitboard.whiteKing > 0 {
+      rights &= 0x83
+    }
   }
 
-  return false
+  return rights
 }

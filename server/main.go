@@ -117,7 +117,7 @@ func main() {
   InitBoard(&bitboard)
   PrintGame(&bitboard)
 
-  //tmp := uint64(1) << 56 >> 8
+  //tmp := uint64(1) << 2 << 8
 
   //fmt.Println(tmp)
   //DisplayPieceLocation(tmp)
