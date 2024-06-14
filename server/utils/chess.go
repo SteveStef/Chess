@@ -41,7 +41,6 @@ const (
   RANK_8 uint64 = 0x00000000000000FF
 
   OnBoard uint64 = 0xFFFFFFFFFFFFFFFF
-  MOVED uint8 = 0x80
 )
 
 type Bitboard struct {
@@ -218,6 +217,107 @@ func MakeMove(piece uint8, from uint64, to uint64, bitboard *Bitboard) {
       bitboard.mailbox[toLocation] = BLACK_QUEEN
     }
     // ====================================================================================== 
+  }
+
+  bitboard.whiteTurn = !bitboard.whiteTurn
+  PrintGame(bitboard)
+}
+
+func UndoMove(movedPiece uint8, capturedPiece uint8, originalLocationOfMovedPiece uint64, newLocationOfMovedPiece uint64, bitboard *Bitboard) {
+  // =================================== Undoing the castling rights ===================================
+  bottomLeft := uint64(1) << 56
+  bottomRight := uint64(1) << 63
+  topLeft := uint64(1)
+  topRight := uint64(1) << 7
+
+  if movedPiece == WHITE_KING {
+    //bitboard.castlingRights |= 0xC0 // 11000000
+
+  } else if movedPiece == BLACK_KING {
+    //bitboard.castlingRights |= 0x3 // 00000011
+
+  } else if movedPiece == WHITE_ROOK && bitboard.whiteOnBottom && originalLocationOfMovedPiece == bottomRight {
+    bitboard.castlingRights |= 0xC2 // 11000010
+
+  } else if movedPiece == WHITE_ROOK && bitboard.whiteOnBottom && originalLocationOfMovedPiece == bottomLeft {
+    bitboard.castlingRights |= 0xC1 // 11000001
+
+  } else if movedPiece == WHITE_ROOK && !bitboard.whiteOnBottom && originalLocationOfMovedPiece == topLeft { 
+    bitboard.castlingRights |= 0xC2 // 11000010
+
+  } else if movedPiece == WHITE_ROOK && !bitboard.whiteOnBottom && originalLocationOfMovedPiece == topRight { 
+    bitboard.castlingRights |= 0xC1 // 11000001
+
+  } else if movedPiece == BLACK_ROOK && bitboard.whiteOnBottom && originalLocationOfMovedPiece == topLeft {
+    bitboard.castlingRights |= 0x83 // 10000011
+
+  } else if movedPiece == BLACK_ROOK && bitboard.whiteOnBottom && originalLocationOfMovedPiece == topRight {
+    bitboard.castlingRights |= 0x43 // 01000011
+
+  } else if movedPiece == BLACK_ROOK && !bitboard.whiteOnBottom && originalLocationOfMovedPiece == bottomLeft {
+    bitboard.castlingRights |= 0x83 // 10000011
+
+  } else if movedPiece == BLACK_ROOK && !bitboard.whiteOnBottom && originalLocationOfMovedPiece == bottomRight {
+    bitboard.castlingRights |= 0x43 // 01000011
+  }
+
+  // =================================== Undoing the enpassant rights ===================================
+  bitboard.enPassant = 0
+
+  // =================================== Undoing the move ===================================
+  if move := PieceMoveFuncs[movedPiece]; move != nil {
+    move(bitboard, newLocationOfMovedPiece, originalLocationOfMovedPiece)
+  }
+
+  // =================================== Undoing the capture ===================================
+  if capture := PieceCaptureFuncs[capturedPiece]; capture != nil {
+    capture(bitboard, newLocationOfMovedPiece)
+  }
+
+  // =================================== Undoing the pawn promotion ===================================
+  if movedPiece == WHITE_PAWN && (newLocationOfMovedPiece & RANK_8) != 0 {
+    bitboard.whitePawns ^= newLocationOfMovedPiece
+    bitboard.whiteQueens ^= newLocationOfMovedPiece
+    bitboard.mailbox[GetMailBoxIndex(newLocationOfMovedPiece)] = 0
+  }
+
+  if movedPiece == BLACK_PAWN && (newLocationOfMovedPiece & RANK_1) != 0 {
+    bitboard.blackPawns ^= newLocationOfMovedPiece
+    bitboard.blackQueens ^= newLocationOfMovedPiece
+    bitboard.mailbox[GetMailBoxIndex(newLocationOfMovedPiece)] = 0
+  }
+
+  // =================================== Undoing the castling move ===================================
+  if movedPiece == WHITE_KING && (newLocationOfMovedPiece << 2) == originalLocationOfMovedPiece {
+    if moveRook, ok := PieceMoveFuncs[WHITE_ROOK]; ok {
+      moveRook(bitboard, bottomRight >> 2, bottomRight)
+      bitboard.mailbox[GetMailBoxIndex(bottomRight)] = WHITE_ROOK
+      bitboard.mailbox[GetMailBoxIndex(bottomRight >> 2)] = 0
+    }
+  }
+
+  if movedPiece == WHITE_KING && (newLocationOfMovedPiece >> 2) == originalLocationOfMovedPiece {
+    if moveRook, ok := PieceMoveFuncs[WHITE_ROOK]; ok {
+      moveRook(bitboard, bottomLeft << 3, bottomLeft)
+      bitboard.mailbox[GetMailBoxIndex(bottomLeft)] = WHITE_ROOK
+      bitboard.mailbox[GetMailBoxIndex(bottomLeft << 3)] = 0
+    }
+  }
+
+  if movedPiece == BLACK_KING && (newLocationOfMovedPiece << 2) == originalLocationOfMovedPiece {
+    if moveRook, ok := PieceMoveFuncs[BLACK_ROOK]; ok {
+      moveRook(bitboard, topRight >> 2, topRight)
+      bitboard.mailbox[GetMailBoxIndex(topRight)] = BLACK_ROOK
+      bitboard.mailbox[GetMailBoxIndex(topRight >> 2)] = 0
+    }
+  }
+
+  if movedPiece == BLACK_KING && (newLocationOfMovedPiece >> 2) == originalLocationOfMovedPiece {
+    if moveRook, ok := PieceMoveFuncs[BLACK_ROOK]; ok {
+      moveRook(bitboard, topLeft << 3, topLeft)
+      bitboard.mailbox[GetMailBoxIndex(topLeft)] = BLACK_ROOK
+      bitboard.mailbox[GetMailBoxIndex(topLeft << 3)] = 0
+    }
   }
 
   bitboard.whiteTurn = !bitboard.whiteTurn

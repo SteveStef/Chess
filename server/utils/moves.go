@@ -353,6 +353,7 @@ func squaresAreGettingAttacked(bitboard *Bitboard, isWhite bool) uint8 {
     // ==================== Checking the knights ============================
     kingSideSquareAttackers := uint64(16309248)
     queenSideSquareAttackers := uint64(4161280)
+
     if kingSideSquareAttackers & bitboard.whiteKnights > 0 {
       rights &= 0x43
     }
@@ -375,11 +376,11 @@ func squaresAreGettingAttacked(bitboard *Bitboard, isWhite bool) uint8 {
       return false
     }
 
-    if checkRank(1+8) || checkRank(2+8) || checkRank(3+8) { // king side
+    if checkRank(4+8) || checkRank(5+8) || checkRank(6+8) { // king side
       rights &= 0x43
     }
 
-    if checkRank(4+8) || checkRank(5+8) || checkRank(6+8) || checkRank(3+8) { // queen side
+    if checkRank(1+8) || checkRank(2+8) || checkRank(3+8) || checkRank(4+8) { // queen side
       rights &= 0x83
     }
 
@@ -396,32 +397,32 @@ func squaresAreGettingAttacked(bitboard *Bitboard, isWhite bool) uint8 {
       return false
     }
 
-    if checkDiagonal(2, 7) || checkDiagonal(2, 9) || checkDiagonal(1, 7) || checkDiagonal(1, 9) { // king side
+    if checkDiagonal(4, 7) || checkDiagonal(4, 9) || checkDiagonal(5, 7) || checkDiagonal(5, 9) || checkDiagonal(6, 7) || checkDiagonal(6, 9){ // king side
       rights &= 0x43
     }
 
-    if checkDiagonal(4, 7) || checkDiagonal(4, 9) || checkDiagonal(5, 7) || checkDiagonal(5, 9) || checkDiagonal(6, 7) || checkDiagonal(6, 9) {
+    if checkDiagonal(1, 7) || checkDiagonal(1, 9) || checkDiagonal(2, 7) || checkDiagonal(2, 9) || checkDiagonal(3, 7) || checkDiagonal(3, 9) || checkDiagonal(4, 7) || checkDiagonal(4, 9){
       rights &= 0x83
     }
 
     // ========================= pawn ========================================
-    pawnAttackers := uint64(71776119061217280) // check these numbers
+    pawnAttackers := uint64(63488) // check these numbers
     if pawnAttackers & bitboard.whitePawns > 0 {
       rights &= 0x43
     }
 
-    pawnAttackers = uint64(4629771061636907072) // check these numbers
+    pawnAttackers = uint64(16128) // check these numbers
     if pawnAttackers & bitboard.whitePawns > 0 {
       rights &= 0x83
     }
 
     // ========================= king ========================================
-    kingAttackers := uint64(1152921504606846976) // check these numbers
+    kingAttackers := uint64(63488) // check these numbers
     if kingAttackers & bitboard.whiteKing > 0 {
       rights &= 0x43
     }
 
-    kingAttackers = uint64(288230376151711744) // check these numbers
+    kingAttackers = uint64(16128) // check these numbers
     if kingAttackers & bitboard.whiteKing > 0 {
       rights &= 0x83
     }
@@ -429,3 +430,5 @@ func squaresAreGettingAttacked(bitboard *Bitboard, isWhite bool) uint8 {
 
   return rights
 }
+
+

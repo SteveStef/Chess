@@ -1,34 +1,22 @@
-================== CHECKING IF CAN CASTLE FROM ATTACKING SQUARES ====================
-
-var whitePieces unint64
-
-bitboard.Constants.F1DL
-bitboard.Constants.F1DR
-bitboard.Constants.F1UP
-
-bitboard.Constants.G1DL
-bitboard.Constants.G1DR
-bitboard.Constants.G1UP
-
-if moving the king, and if can castling kings side:
-   // no whites on diagainal and there is black bishops or queen
-   if (F1DL & whitePieces == 0) && (F1DL & blackBishop | bq >= 0)
-   	then find first black piece with mailbox and if its a bishop or queen then don't add to the move list.
-
-- Use this same logic for the other pieces and locations.
-- also keep in mind that the king can't castle if the king is in check
-
 ============================= OPTIMIZATIONS ============================================
 1. Use mailbox to check if a piece is present in move generation
 2. Restructure the if statements in the move generation and MakeMove funcitons. 
 3. Make a map for getting the index of mailbox from the uint64 (A square on the board)
 
 =================================== CHESS MOVEMENT ======================================
-1. Stopping castling if square is being attacked
-2. Allow choice for pawn promotion (optional)
+1. Allow choice for pawn promotion (optional)
 
 ======================================= AI ============================================
 1. Make a undo move function
 2. Make a random AI first and connect it to the frontent
 
 ======================================= NOTES ===========================================
+FOR UNDO MOVE FUNCTION:
+
+Approach:
+  My current idea is to store the previous rules (in castling rules and en passant rules) in the bitboard state.
+  Then, when the undo move function is called, I will revert the castling rules and en passant rules to the previous state.
+  For the mailbox and the bitboard, I will revert the changes made by the move.
+  The problem that I foresee is that in the recursive calls, the castling rules and en passant rules will be overwritten.
+
+  Yeah it seems it will cause a problem which means I am going to have to recreate the board rules with only the infomation from the move that is being undone.
