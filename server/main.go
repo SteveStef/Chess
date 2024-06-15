@@ -74,7 +74,6 @@ func Moves(context *gin.Context) {
   context.IndentedJSON(http.StatusOK, moveList) 
 }
 
-
 func GenerateBoard(context *gin.Context) {
   var fen string
   if err := context.BindJSON(&fen); err != nil {

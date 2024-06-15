@@ -2,6 +2,7 @@
 1. Use mailbox to check if a piece is present in move generation
 2. Restructure the if statements in the move generation and MakeMove funcitons. 
 3. Make a map for getting the index of mailbox from the uint64 (A square on the board)
+4. I could keep track of material score in the bitboard struct to avoid recalculating it every time
 
 =================================== CHESS MOVEMENT ======================================
 1. Allow choice for pawn promotion (optional)
@@ -20,3 +21,7 @@ Approach:
   The problem that I foresee is that in the recursive calls, the castling rules and en passant rules will be overwritten.
 
   Yeah it seems it will cause a problem which means I am going to have to recreate the board rules with only the infomation from the move that is being undone.
+
+FOR HEURISTICS:
+  Change the tables to only have integers so you don't have to worry about the overflows
+

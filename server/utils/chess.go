@@ -40,6 +40,9 @@ const (
   RANK_7 uint64 = 0x000000000000FF00
   RANK_8 uint64 = 0x00000000000000FF
 
+  WHITE_MASK uint8 = 0x80
+  BLACK_MASK uint8 = 0x40
+
   OnBoard uint64 = 0xFFFFFFFFFFFFFFFF
 )
 
@@ -486,6 +489,8 @@ func PrintGame(bitboard *Bitboard) {
 
   fmt.Println("Next Turn is White:", bitboard.whiteTurn)
   fmt.Printf("Castling Rights: %b", bitboard.castlingRights)
+  eval := Evaluate(bitboard)
+  fmt.Println("\nEvaluation:", eval)
   fmt.Println("\n-------------------------------------------")
 
 }
